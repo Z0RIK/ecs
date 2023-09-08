@@ -20,7 +20,7 @@ void printScale(scale* scale)
 	std::cout << scale->x << '\t' << scale->y << '\t' << scale->z << '\n';
 }
 
-#include "ecs/scene.h"
+#include "ecs/ecs.h"
 
 int main()
 {

@@ -1,23 +1,7 @@
 #ifndef ECS_SCENE_H
 #define ECS_SCENE_H
 
-#include <vector>
-
-typedef uint64_t Entity;
-typedef uint32_t EntityIndex;
-typedef uint32_t EntityVersion;
-
-#include "pool.h"
-#include "scope.h"
-
 static size_t sComponentCounter = 0;
-
-template<typename T>
-int getComponentId()
-{
-	static int sComponentId = sComponentCounter++;
-	return sComponentId;
-}
 
 class Scene final
 {
@@ -59,6 +43,9 @@ private:
 	inline EntityIndex getEntityIndex(Entity entity);
 	inline EntityVersion getEntityVersion(Entity entity);
 	inline bool isEntityValid(Entity entity);
+
+	template<typename T>
+	size_t getComponentId();
 
 };
 
@@ -107,12 +94,19 @@ inline T* Scene::getComponent(Entity entity)
 	return (T*)mPools[componentId]->get(getEntityIndex(entity));
 }
 
+template<typename T>
+size_t Scene::getComponentId()
+{
+	static size_t sComponentId = sComponentCounter++;
+	return sComponentId;
+}
+
 template <typename... ComponentTypes>
 Scope Scene::scope()
 {
 	if (!sizeof...(ComponentTypes)) return Scope(this, mPools, true);
 
-	int componentIds[sizeof...(ComponentTypes)] = { getComponentId<ComponentTypes...>() };
+	size_t componentIds[sizeof...(ComponentTypes)] = { getComponentId<ComponentTypes...>() };
 
 	std::vector<Pool*> pools;
 

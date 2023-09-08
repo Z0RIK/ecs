@@ -10,13 +10,15 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/bin") # .exe and .d
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/lib") # .so and .dylib
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/lib") # .lib and .a
 
-add_library(ecs STATIC ${CMAKE_CURRENT_LIST_DIR}/src/ecs/ecs.cpp
-${CMAKE_CURRENT_LIST_DIR}/src/ecs/pool.h
-${CMAKE_CURRENT_LIST_DIR}/src/ecs/ecs.h
-${CMAKE_CURRENT_LIST_DIR}/src/ecs/scope.h)
+add_library(ecs STATIC ${CMAKE_CURRENT_LIST_DIR}/src/ecs.cpp
+${CMAKE_CURRENT_LIST_DIR}/src/pool.h
+${CMAKE_CURRENT_LIST_DIR}/src/scope.h
+${CMAKE_CURRENT_LIST_DIR}/src/scene.h)
 
-add_executable(example ${CMAKE_CURRENT_LIST_DIR}/src/examples/main.cpp)
+target_include_directories(ecs 
+PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src
+PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
+
+add_executable(example ${CMAKE_CURRENT_LIST_DIR}/example/src/main.cpp)
 
 target_link_libraries(example PRIVATE ecs)
-
-target_include_directories(example PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)

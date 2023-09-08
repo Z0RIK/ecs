@@ -1,15 +1,4 @@
-#if 1
-
-#include "scene.h"
-
-#ifndef MAX_COMPONENTS
-#define MAX_COMPONENTS 1024
-#endif // !MAX_COMPONENTS
-
-#ifndef MAX_ENTITIES
-#define MAX_ENTITIES uint32_t(-1) // uint32_t(-1) is reserved for invalid indexes
-#endif // !MAX_ENTITIES
-
+#include "ecs/ecs.h"
 
 //__SCENE______________________________________________________________________
 
@@ -53,8 +42,6 @@ void Scene::destroyEntity(Entity entity)
 	EntityVersion newVersion = getEntityVersion(mEntities[getEntityIndex(entity)]) + 1;
 
 	mEntities[getEntityIndex(entity)] = combineIndexVersion(newIndex, newVersion);
-
-	return;
 }
 
 bool Scene::isValid(Entity entity)
@@ -63,8 +50,6 @@ bool Scene::isValid(Entity entity)
 		&& (getEntityIndex(entity) < mEntities.size())
 		&& (mEntities[getEntityIndex(entity)] == entity);
 }
-
-
 
 inline Entity Scene::combineIndexVersion(EntityIndex index, EntityVersion version)
 {
@@ -98,8 +83,6 @@ Pool::Pool(size_t elementSize, size_t chunkSize)
 	mData.back().reserve(mChunkSize * mElementSize);
 }
 
-#include <iostream>
-
 void* Pool::assign(EntityIndex entityIndex)
 {
 	if (mPointers.size() <= entityIndex)
@@ -125,8 +108,6 @@ void* Pool::assign(EntityIndex entityIndex)
 	mData.back().resize(mData.back().size() + mElementSize);
 
  	mPointers[entityIndex] = &mData.back()[0] + mData.back().size() - mElementSize;
-
-	if (entityIndex) std::cout << (int)mPointers[entityIndex] - (int)mPointers[entityIndex - 1] << std::endl;
 
 	return mPointers[entityIndex];
 }
@@ -168,7 +149,7 @@ const Scope::Iterator Scope::end()
 	if (mAll && mScene->mPools.size() != mPools.size())
 		mPools = mScene->mPools;
 
-	return Iterator(mScene, mPools, mScene->mEntities.size());
+	return Iterator(mScene, mPools, (EntityIndex)mScene->mEntities.size());
 }
 
 Scope::Iterator::Iterator(Scene* scene, std::vector<Pool*> pools, EntityIndex firstIndex)
@@ -210,4 +191,3 @@ bool Scope::Iterator::isIndexValid()
 
 //_!SCOPE______________________________________________________________________
 //_____________________________________________________________________________
-#endif // 1
