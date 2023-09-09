@@ -19,6 +19,9 @@ target_include_directories(ecs
 PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src
 PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
 
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/example/deps/raylib)
+
 add_executable(example ${CMAKE_CURRENT_LIST_DIR}/example/src/main.cpp)
 
 target_link_libraries(example PRIVATE ecs)
+target_link_libraries(example PRIVATE raylib)

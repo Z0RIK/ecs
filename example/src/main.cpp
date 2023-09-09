@@ -1,58 +1,102 @@
-
 #include <random>
 #include <iostream>
 
-struct position {
-	float x, y, z;
-};
-
-struct scale {
-	float x, y, z;
-};
-
-void printPosition(position* pos)
-{
-	std::cout << pos->x << '\t' << pos->y << '\t' << pos->z << '\n';
-}
-
-void printScale(scale* scale)
-{
-	std::cout << scale->x << '\t' << scale->y << '\t' << scale->z << '\n';
-}
-
 #include "ecs/ecs.h"
+
+#include "raylib.h"
+
+typedef struct EntityData {
+	Vector2 position;
+	Vector2 velocity;
+	float mass;
+	float age;
+} PhysicsData;
+
+typedef struct Sprite {
+	Color color;
+	float radius;
+} Sprite;
+
+Scene* createScene()
+{
+	Scene* scene = new Scene(1024);
+
+	scene->createPool<EntityData>(1024);
+	scene->createPool<Sprite>(1024);
+
+	return scene;
+}
 
 int main()
 {
-	Scene scene(12);
-	/*
-	Entity zorik = scene.createEntity();
-	scene.getComponent<float>(zorik);
-	//scene.destroyEntity(zorik);
-	position* zorikPosition = scene.assignComponent<position>(zorik);
-	scale* zorikScale = scene.assignComponent<scale>(zorik);
-	
-	*zorikPosition = position{ 13.0f, 3.0f, 7.0f };
-	*zorikScale = scale{ 14.0f, 4.0f, 8.0f };
-	
-	printPosition(zorikPosition);
-	*/
+	float lifeTime{};
+	float spawnRate{}, spawnCounter{};
 
-	for (size_t i = 0; i < 15; i++)
-	{
-		Entity temp = scene.createEntity();
-		position* tempPos = scene.assignComponent<position>(temp);
-		*tempPos = { float(std::rand() % 999)/10.0f, float(std::rand() % 999) / 10.0f , float(std::rand() % 999) / 10.0f };
-		//printPosition(tempPos);
-	}
-	
-	Scope scope = scene.scope<position>();
+	Scene* scene = createScene();
 
-	for (auto ENTT : scene.scope<position>())
+	InitWindow(800, 600, "[core]");
+	SetTargetFPS(60);
+
+	while (!WindowShouldClose())
 	{
-		position* tempPos = scene.getComponent<position>(ENTT);
-		printPosition(tempPos);
+		// Update
+
+		// Create new entity 
+		spawnRate = 1.0f;
+
+		spawnCounter -= GetFrameTime();
+		if (spawnCounter <= 0.0f)
+		{
+			spawnCounter = spawnRate;
+
+			Entity newEntity = scene->createEntity();
+			EntityData* data = scene->assignComponent<EntityData>(newEntity);
+
+			data->position = { float(rand() % GetScreenWidth()), float(rand() % GetScreenHeight()) };
+			data->velocity = { float(rand() % 256 - 128), float(rand() % 256 - 128) };
+			data->mass = rand() % 255;
+			data->age = rand() % 255;
+
+			Sprite* spr = scene->assignComponent<Sprite>(newEntity);
+			*spr = { DARKGRAY, 10.0f };
+		}
+
+		// Update position
+
+		for (Entity entity : scene->scope<EntityData>())
+		{
+			EntityData* data = scene->getComponent<EntityData>(entity);
+			Vector2* pos = &data->position;
+			Vector2* v = &data->velocity;
+
+			pos->x += v->x * GetFrameTime(); 
+			pos->y += v->y * GetFrameTime();
+
+			if (pos->x < 0.0f || pos->x > GetScreenWidth())
+				v->x *= -1.0f;
+			if (pos->y < 0.0f || pos->y > GetScreenHeight()) 
+				v->y *= -1.0f;
+		}
+
+		// Draw
+		BeginDrawing();
+
+		ClearBackground(LIGHTGRAY);
+		
+		for (Entity entity : scene->scope<EntityData, Sprite>())
+		{
+			EntityData* data = scene->getComponent<EntityData>(entity);
+			Vector2* pos = &data->position;
+
+			Sprite* spr = scene->getComponent<Sprite>(entity);
+
+			DrawCircle(pos->x, pos->y, spr->radius, spr->color);
+		}
+
+		DrawText(TextFormat("Entity count : [%d]", scene->size()), 10, 10, 10, MAGENTA);
+
+		EndDrawing();
 	}
-	
+
 	return 0;
 }

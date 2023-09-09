@@ -13,6 +13,10 @@ public:
 	Entity createEntity();
 	void destroyEntity(Entity entity);
 	inline bool isValid(Entity entity);
+	size_t size();
+
+	template<typename T>
+	void createPool(size_t size);
 	
 	template <typename T>
 	T* assignComponent(Entity entity);
@@ -48,6 +52,20 @@ private:
 	size_t getComponentId();
 
 };
+
+template<typename T>
+void Scene::createPool(size_t size)
+{
+	size_t componentId = getComponentId<T>();
+
+	while (componentId >= mPools.size())
+	{
+		mPools.push_back(nullptr);
+		mPools.back() = new Pool(sizeof(T), mEntities.capacity());
+	}
+
+	if (!mPools[componentId]) mPools[componentId] = new Pool(sizeof(T), size);
+}
 
 template<typename T>
 T* Scene::assignComponent(Entity entity)
@@ -106,7 +124,7 @@ Scope Scene::scope()
 {
 	if (!sizeof...(ComponentTypes)) return Scope(this, mPools, true);
 
-	size_t componentIds[sizeof...(ComponentTypes)] = { getComponentId<ComponentTypes...>() };
+	size_t componentIds[sizeof...(ComponentTypes)] = { getComponentId<ComponentTypes>()... };
 
 	std::vector<Pool*> pools;
 

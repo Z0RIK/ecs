@@ -39,7 +39,7 @@ void Scene::destroyEntity(Entity entity)
 	mFreeIndexes.push_back(getEntityIndex(entity));
 
 	EntityIndex newIndex = EntityIndex(-1);
-	EntityVersion newVersion = getEntityVersion(mEntities[getEntityIndex(entity)]) + 1;
+	EntityVersion newVersion = getEntityVersion(entity) + 1;
 
 	mEntities[getEntityIndex(entity)] = combineIndexVersion(newIndex, newVersion);
 }
@@ -49,6 +49,11 @@ bool Scene::isValid(Entity entity)
 	return (getEntityIndex(entity) != EntityIndex(-1)) 
 		&& (getEntityIndex(entity) < mEntities.size())
 		&& (mEntities[getEntityIndex(entity)] == entity);
+}
+
+size_t Scene::size()
+{
+	return mEntities.size() - mFreeIndexes.size();
 }
 
 inline Entity Scene::combineIndexVersion(EntityIndex index, EntityVersion version)
@@ -76,8 +81,8 @@ inline bool Scene::isEntityValid(Entity entity)
 
 //__POOL_______________________________________________________________________
 
-Pool::Pool(size_t elementSize, size_t chunkSize)
-	:mElementSize(elementSize), mChunkSize(chunkSize)
+Pool::Pool(size_t elementSize, size_t poolSize)
+	:mElementSize(elementSize), mChunkSize(poolSize)
 {
 	mData.push_back(std::vector<uint8_t>());
 	mData.back().reserve(mChunkSize * mElementSize);
