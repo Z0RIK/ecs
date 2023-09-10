@@ -1,16 +1,16 @@
 #include <random>
 #include <iostream>
+#include <vector>
 
 #include "ecs/ecs.h"
 
 #include "raylib.h"
 
-typedef struct EntityData {
+typedef struct ParticleData {
 	Vector2 position;
 	Vector2 velocity;
-	float mass;
 	float age;
-} PhysicsData;
+} ParticleData;
 
 typedef struct Sprite {
 	Color color;
@@ -21,7 +21,7 @@ Scene* createScene()
 {
 	Scene* scene = new Scene(1024);
 
-	scene->createPool<EntityData>(1024);
+	scene->createPool<ParticleData>(1024);
 	scene->createPool<Sprite>(1024);
 
 	return scene;
@@ -50,22 +50,40 @@ int main()
 			spawnCounter = spawnRate;
 
 			Entity newEntity = scene->createEntity();
-			EntityData* data = scene->assignComponent<EntityData>(newEntity);
+			ParticleData* data = scene->assignComponent<ParticleData>(newEntity);
 
 			data->position = { float(rand() % GetScreenWidth()), float(rand() % GetScreenHeight()) };
 			data->velocity = { float(rand() % 256 - 128), float(rand() % 256 - 128) };
-			data->mass = rand() % 255;
 			data->age = rand() % 255;
 
 			Sprite* spr = scene->assignComponent<Sprite>(newEntity);
 			*spr = { DARKGRAY, 10.0f };
 		}
 
-		// Update position
+		// Update velocity
 
-		for (Entity entity : scene->scope<EntityData>())
+		for (Entity entity1 : scene->scope<ParticleData>())
 		{
-			EntityData* data = scene->getComponent<EntityData>(entity);
+			ParticleData* data1 = scene->assignComponent<ParticleData>(entity1);
+			Vector2* pos1 = &data1->position;
+
+			for (Entity entity2 : scene->scope<ParticleData>())
+			{
+				ParticleData* data2 = scene->assignComponent<ParticleData>(entity2);
+				Vector2* pos2 = &data2->position;
+
+				Vector2 distanceVector = { pos2->x - pos1->x, pos2->y - pos1->x };
+				float distance = sqrt(distanceVector.x * distanceVector.x + distanceVector.y * distanceVector.y);
+
+			}
+		}
+
+		// Update position and age
+
+		for (Entity entity : scene->scope<ParticleData>())
+		{
+			// Position
+			ParticleData* data = scene->getComponent<ParticleData>(entity);
 			Vector2* pos = &data->position;
 			Vector2* v = &data->velocity;
 
@@ -76,6 +94,13 @@ int main()
 				v->x *= -1.0f;
 			if (pos->y < 0.0f || pos->y > GetScreenHeight()) 
 				v->y *= -1.0f;
+
+			// Age
+			data->age -= GetFrameTime();
+
+			if (data->age <= 0.0f) 
+				scene->destroyEntity(entity);
+			
 		}
 
 		// Draw
@@ -83,9 +108,9 @@ int main()
 
 		ClearBackground(LIGHTGRAY);
 		
-		for (Entity entity : scene->scope<EntityData, Sprite>())
+		for (Entity entity : scene->scope<ParticleData, Sprite>())
 		{
-			EntityData* data = scene->getComponent<EntityData>(entity);
+			ParticleData* data = scene->getComponent<ParticleData>(entity);
 			Vector2* pos = &data->position;
 
 			Sprite* spr = scene->getComponent<Sprite>(entity);
