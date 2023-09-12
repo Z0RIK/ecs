@@ -1,6 +1,7 @@
 #include <random>
 #include <iostream>
 #include <vector>
+#include <string>
 
 #include "ecs/ecs.h"
 
@@ -8,6 +9,24 @@
 
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
+
+std::vector<Color> colors =
+{
+	YELLOW,
+	PINK,
+	ORANGE,
+	RED,
+	GOLD,
+	MAROON,
+	GREEN,
+	SKYBLUE,
+	LIME,
+	DARKGREEN,
+	PURPLE,
+	MAGENTA,
+	VIOLET,
+	DARKPURPLE
+};
 
 // User defined components
 typedef struct ParticleData {
@@ -25,9 +44,6 @@ typedef struct Sprite {
 Scene* createScene(std::vector<size_t> startingAmount)
 {
 	size_t particleCount{};
-	std::vector<Color> colors;
-	colors.push_back(RED);
-	colors.push_back(YELLOW);
 
 	for (auto it : startingAmount)
 		particleCount += it;
@@ -60,7 +76,7 @@ int main()
 	float lifeTime{};
 	float spawnRate{}, spawnCounter{};
 
-	std::vector<size_t> startingAmount(2, 50);
+	std::vector<size_t> startingAmount(2, 300);
 	std::vector<std::vector<float>> forceTable(2, std::vector<float>(2, 0.0f));
 
 	forceTable[0][0] = -2000.0f;
@@ -117,7 +133,7 @@ int main()
 				Vector2 distanceVector = { pos2->x - pos1->x, pos2->y - pos1->y };
 				float distance = sqrt(distanceVector.x * distanceVector.x + distanceVector.y * distanceVector.y);
 
-				if (distance <= 3.0f) continue;
+				if (distance <= 0.1f) continue;
 
 				v1->x += (distanceVector.x / (distance * distance * distance)) * forceTable[id1][id2] * GetFrameTime();
 				v1->y += (distanceVector.y / (distance * distance * distance)) * forceTable[id1][id2] * GetFrameTime();
@@ -169,6 +185,13 @@ int main()
 		}
 
 		DrawText(TextFormat("Entity count : [%d]", scene->size()), 10, 10, 10, MAGENTA);
+		if (GuiButton(Rectangle(30, 30, GetTextWidth("Reset scene") + 10, 20), "Reset scene"))
+		{
+			delete scene;
+			scene = createScene(startingAmount);
+		}
+		GuiSlider(Rectangle(10, 50, 200, 20), nullptr, std::to_string(forceTable[0][0]).c_str(), &forceTable[0][0], -10'000, 10'000);
+		GuiColorPicker(Rectangle(10, 200, 100, 100), nullptr, &colors[0]);
 
 		EndDrawing();
 	}
