@@ -14,18 +14,8 @@ std::vector<Color> colors =
 {
 	YELLOW,
 	PINK,
-	ORANGE,
-	RED,
-	GOLD,
-	MAROON,
-	GREEN,
 	SKYBLUE,
-	LIME,
-	DARKGREEN,
-	PURPLE,
-	MAGENTA,
-	VIOLET,
-	DARKPURPLE
+	GREEN
 };
 
 // User defined components
@@ -41,7 +31,7 @@ typedef struct Sprite {
 	float radius;
 } Sprite;
 
-Scene* createScene(std::vector<size_t> startingAmount)
+Scene* createScene(std::vector<size_t> startingAmount, Rectangle simulationBorders)
 {
 	size_t particleCount{};
 
@@ -58,13 +48,12 @@ Scene* createScene(std::vector<size_t> startingAmount)
 			ParticleData* data = scene->assignComponent<ParticleData>(newEntity);
 
 			data->id = i;
-			data->position = { float(rand() % GetScreenWidth()), float(rand() % GetScreenHeight()) };
+			data->position = { rand() % (int)simulationBorders.width + simulationBorders.x, rand() % (int)simulationBorders.height + simulationBorders.y };
 			data->velocity = { 0.0f, 0.0f };
-			//data->velocity = { float(rand() % 50 - 25), float(rand() % 50 - 25) };
 			data->age = rand() % 255;
 
 			Sprite* spr = scene->assignComponent<Sprite>(newEntity);
-			*spr = { colors[i], 3.0f};
+			*spr = { colors[i], 1.0f};
 		}
 	}
 
@@ -76,18 +65,21 @@ int main()
 	float lifeTime{};
 	float spawnRate{}, spawnCounter{};
 
-	std::vector<size_t> startingAmount(2, 300);
-	std::vector<std::vector<float>> forceTable(2, std::vector<float>(2, 0.0f));
+	std::vector<size_t> startingAmount(4, 150);
+	std::vector<std::vector<float>> forceTable(4, std::vector<float>(4, 0.0f));
 
 	forceTable[0][0] = -2000.0f;
 	forceTable[0][1] = 6000.0f;
 	forceTable[1][0] = 800.0f;
 	forceTable[1][1] = 6000.0f;
 
-	InitWindow(800, 600, "[core]");
+	InitWindow(900, 600, "[core]");
 	SetTargetFPS(60);
 
-	Scene* scene = createScene(startingAmount);
+	Rectangle uiBorders(10, 10, 280, 580);
+	Rectangle simulationBorders(300, 10, 590, 580);
+
+	Scene* scene = createScene(startingAmount, simulationBorders);
 
 	while (!WindowShouldClose())
 	{
@@ -115,6 +107,9 @@ int main()
 		*/
 		// Update velocity
 
+		DrawRectangleLinesEx(uiBorders, 2, LIGHTGRAY);
+		DrawRectangleLinesEx(simulationBorders, 2, LIGHTGRAY);
+
 		for (Entity entity1 : scene->scope<ParticleData>())
 		{
 			ParticleData* data1 = scene->getComponent<ParticleData>(entity1);
@@ -133,14 +128,10 @@ int main()
 				Vector2 distanceVector = { pos2->x - pos1->x, pos2->y - pos1->y };
 				float distance = sqrt(distanceVector.x * distanceVector.x + distanceVector.y * distanceVector.y);
 
-				if (distance <= 0.1f) continue;
+				if (distance <= 0.01f) continue;
 
 				v1->x += (distanceVector.x / (distance * distance * distance)) * forceTable[id1][id2] * GetFrameTime();
 				v1->y += (distanceVector.y / (distance * distance * distance)) * forceTable[id1][id2] * GetFrameTime();
-				//distanceVector.x /= distance;
-				//distanceVector.y /= distance;
-
-
 			}
 		}
 		
@@ -156,9 +147,9 @@ int main()
 			pos->x += v->x * GetFrameTime(); 
 			pos->y += v->y * GetFrameTime();
 
-			if (pos->x < 0.0f || pos->x > GetScreenWidth())
+			if (pos->x < simulationBorders.x || pos->x > (simulationBorders.x + simulationBorders.width))
 				v->x *= -1.0f;
-			if (pos->y < 0.0f || pos->y > GetScreenHeight()) 
+			if (pos->y < simulationBorders.y || pos->y > (simulationBorders.y + simulationBorders.height)) 
 				v->y *= -1.0f;
 
 			// Age
@@ -172,7 +163,7 @@ int main()
 		// Draw
 		BeginDrawing();
 
-		ClearBackground(LIGHTGRAY);
+		ClearBackground(DARKGRAY);
 		
 		for (Entity entity : scene->scope<ParticleData, Sprite>())
 		{
@@ -184,14 +175,40 @@ int main()
 			DrawCircle(pos->x, pos->y, spr->radius, spr->color);
 		}
 
-		DrawText(TextFormat("Entity count : [%d]", scene->size()), 10, 10, 10, MAGENTA);
-		if (GuiButton(Rectangle(30, 30, GetTextWidth("Reset scene") + 10, 20), "Reset scene"))
+		DrawText(TextFormat("Entity count : [%d]", scene->size()), 10, 10, 10, LIGHTGRAY);
+
+		float yPos = 50.0f;
+
+		for (size_t i = 0; i < 4; i++)
+		{
+			DrawText("Particle ", 15, yPos, 10, LIGHTGRAY);
+			DrawRectangle(15 + GetTextWidth("Particle "), yPos, 10, 10, colors[i]);
+			yPos += 20.0f;
+			DrawText("Starting amount ", 15, yPos, 10, LIGHTGRAY);
+			GuiValueBox(Rectangle(15 + GetTextWidth("Starting amount "), yPos, 50, 10), nullptr, (int*)&startingAmount[i], 0, 10'000, false);
+			for (size_t j = 0; j < 4; j++)
+			{
+				yPos += 20.0f;
+				DrawRectangle(15, yPos, 10, 10, colors[i]);
+				DrawLineEx({ 30, yPos + 10 }, { 40, yPos }, 1, LIGHTGRAY);
+				DrawLineEx({ 30, yPos }, { 40, yPos + 10 }, 1, LIGHTGRAY);
+				DrawRectangle(45, yPos, 10, 10, colors[j]);
+				GuiSlider(Rectangle(65, yPos, 140, 10), nullptr, std::to_string(forceTable[i][j]).c_str(), &forceTable[i][j], -10'000, 10'000);
+			}
+			yPos += 20.0f;
+		}
+
+		if (GuiButton(Rectangle(200, yPos, GetTextWidth("Reset scene") + 10, 20), "Reset scene"))
 		{
 			delete scene;
-			scene = createScene(startingAmount);
+			scene = createScene(startingAmount, simulationBorders);
 		}
-		GuiSlider(Rectangle(10, 50, 200, 20), nullptr, std::to_string(forceTable[0][0]).c_str(), &forceTable[0][0], -10'000, 10'000);
-		GuiColorPicker(Rectangle(10, 200, 100, 100), nullptr, &colors[0]);
+
+		//GuiSlider(Rectangle(10, 50, 200, 20), nullptr, std::to_string(forceTable[0][0]).c_str(), &forceTable[0][0], -10'000, 10'000);
+		//DrawRectangle(10, 70, 10, 10, colors[0]);
+		//DrawRectangle(10, 90, 10, 10, colors[1]);
+		//DrawRectangle(10, 110, 10, 10, colors[2]);
+		//DrawRectangle(10, 130, 10, 10, colors[3]);
 
 		EndDrawing();
 	}
