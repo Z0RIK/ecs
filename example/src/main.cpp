@@ -18,6 +18,12 @@ std::vector<Color> colors =
 	GREEN
 };
 
+const int MINIMUM_AMOUNT = 50;
+const int MAXIMUM_AMOUNT = 300;
+
+const int MINIMUM_FORCE = -100'000;
+const int MAXIMUM_FORCE = 100'000;
+
 // User defined components
 typedef struct ParticleData {
 	size_t id;
@@ -53,7 +59,7 @@ Scene* createScene(std::vector<size_t> startingAmount, Rectangle simulationBorde
 			data->age = rand() % 255;
 
 			Sprite* spr = scene->assignComponent<Sprite>(newEntity);
-			*spr = { colors[i], 1.0f};
+			*spr = { colors[i], 3.0f};
 		}
 	}
 
@@ -65,13 +71,13 @@ int main()
 	float lifeTime{};
 	float spawnRate{}, spawnCounter{};
 
-	std::vector<size_t> startingAmount(4, 150);
+	std::vector<size_t> startingAmount(4, 0);
 	std::vector<std::vector<float>> forceTable(4, std::vector<float>(4, 0.0f));
 
-	forceTable[0][0] = -2000.0f;
-	forceTable[0][1] = 6000.0f;
-	forceTable[1][0] = 800.0f;
-	forceTable[1][1] = 6000.0f;
+	startingAmount[0] = 300;
+	startingAmount[1] = 100;
+	startingAmount[2] = 100;
+	startingAmount[3] = 150;
 
 	InitWindow(900, 600, "[core]");
 	SetTargetFPS(60);
@@ -107,8 +113,7 @@ int main()
 		*/
 		// Update velocity
 
-		DrawRectangleLinesEx(uiBorders, 2, LIGHTGRAY);
-		DrawRectangleLinesEx(simulationBorders, 2, LIGHTGRAY);
+
 
 		for (Entity entity1 : scene->scope<ParticleData>())
 		{
@@ -116,6 +121,9 @@ int main()
 			Vector2* pos1 = &data1->position;
 			Vector2* v1 = &data1->velocity;
 			size_t id1 = data1->id;
+
+			v1->x = 0.0f;
+			v1->y = 0.0f;
 
 			for (Entity entity2 : scene->scope<ParticleData>())
 			{
@@ -128,7 +136,7 @@ int main()
 				Vector2 distanceVector = { pos2->x - pos1->x, pos2->y - pos1->y };
 				float distance = sqrt(distanceVector.x * distanceVector.x + distanceVector.y * distanceVector.y);
 
-				if (distance <= 0.01f) continue;
+				if (distance <= 1.0f) distance = 0.1f;
 
 				v1->x += (distanceVector.x / (distance * distance * distance)) * forceTable[id1][id2] * GetFrameTime();
 				v1->y += (distanceVector.y / (distance * distance * distance)) * forceTable[id1][id2] * GetFrameTime();
@@ -147,10 +155,16 @@ int main()
 			pos->x += v->x * GetFrameTime(); 
 			pos->y += v->y * GetFrameTime();
 
-			if (pos->x < simulationBorders.x || pos->x > (simulationBorders.x + simulationBorders.width))
+			if (pos->x < simulationBorders.x || pos->x >(simulationBorders.x + simulationBorders.width))
+			{
 				v->x *= -1.0f;
-			if (pos->y < simulationBorders.y || pos->y > (simulationBorders.y + simulationBorders.height)) 
+				pos->x += 2 * v->x * GetFrameTime();
+			}
+			if (pos->y < simulationBorders.y || pos->y >(simulationBorders.y + simulationBorders.height))
+			{
 				v->y *= -1.0f;
+				pos->y += 2 * v->y * GetFrameTime();
+			}
 
 			// Age
 			data->age -= GetFrameTime();
@@ -175,25 +189,25 @@ int main()
 			DrawCircle(pos->x, pos->y, spr->radius, spr->color);
 		}
 
-		DrawText(TextFormat("Entity count : [%d]", scene->size()), 10, 10, 10, LIGHTGRAY);
+		DrawText(TextFormat("Entity count : [%d]", scene->size()), 20, 20, 10, RAYWHITE);
 
 		float yPos = 50.0f;
 
 		for (size_t i = 0; i < 4; i++)
 		{
-			DrawText("Particle ", 15, yPos, 10, LIGHTGRAY);
-			DrawRectangle(15 + GetTextWidth("Particle "), yPos, 10, 10, colors[i]);
+			DrawText("Particle ", 20, yPos, 10, RAYWHITE);
+			DrawRectangle(20 + GetTextWidth("Particle "), yPos, 10, 10, colors[i]);
 			yPos += 20.0f;
-			DrawText("Starting amount ", 15, yPos, 10, LIGHTGRAY);
-			GuiValueBox(Rectangle(15 + GetTextWidth("Starting amount "), yPos, 50, 10), nullptr, (int*)&startingAmount[i], 0, 10'000, false);
+			DrawText("Starting amount ", 20, yPos, 10, RAYWHITE);
+			GuiValueBox(Rectangle(20 + GetTextWidth("Starting amount "), yPos, 50, 10), nullptr, (int*)&startingAmount[i], MINIMUM_AMOUNT, MAXIMUM_AMOUNT, false);
 			for (size_t j = 0; j < 4; j++)
 			{
 				yPos += 20.0f;
-				DrawRectangle(15, yPos, 10, 10, colors[i]);
-				DrawLineEx({ 30, yPos + 10 }, { 40, yPos }, 1, LIGHTGRAY);
-				DrawLineEx({ 30, yPos }, { 40, yPos + 10 }, 1, LIGHTGRAY);
-				DrawRectangle(45, yPos, 10, 10, colors[j]);
-				GuiSlider(Rectangle(65, yPos, 140, 10), nullptr, std::to_string(forceTable[i][j]).c_str(), &forceTable[i][j], -10'000, 10'000);
+				DrawRectangle(20, yPos, 10, 10, colors[i]);
+				DrawLineEx({ 35, yPos + 10 }, { 45, yPos }, 1, RAYWHITE);
+				DrawLineEx({ 35, yPos }, { 45, yPos + 10 }, 1, RAYWHITE);
+				DrawRectangle(50, yPos, 10, 10, colors[j]);
+				GuiSlider(Rectangle(70, yPos, 140, 10), nullptr, TextFormat("%.3f", forceTable[i][j]), &forceTable[i][j], MINIMUM_FORCE, MAXIMUM_FORCE);
 			}
 			yPos += 20.0f;
 		}
@@ -204,11 +218,18 @@ int main()
 			scene = createScene(startingAmount, simulationBorders);
 		}
 
-		//GuiSlider(Rectangle(10, 50, 200, 20), nullptr, std::to_string(forceTable[0][0]).c_str(), &forceTable[0][0], -10'000, 10'000);
-		//DrawRectangle(10, 70, 10, 10, colors[0]);
-		//DrawRectangle(10, 90, 10, 10, colors[1]);
-		//DrawRectangle(10, 110, 10, 10, colors[2]);
-		//DrawRectangle(10, 130, 10, 10, colors[3]);
+		if (GuiButton(Rectangle(100, yPos, GetTextWidth("Random weights") + 10, 20), "Random"))
+		{
+			for (size_t i = 0; i < 4; i++)
+			{
+				startingAmount[i] = rand() % (MAXIMUM_AMOUNT - MINIMUM_AMOUNT) + MINIMUM_AMOUNT;
+				for (size_t j = 0; j < 4; j++)
+					forceTable[i][j] = static_cast<float>(10 * (rand() % (10'000 + 10'000) - 10'000));
+			}
+		}
+
+		DrawRectangleLinesEx(uiBorders, 2, RAYWHITE);
+		DrawRectangleLinesEx(simulationBorders, 2, RAYWHITE);
 
 		EndDrawing();
 	}
