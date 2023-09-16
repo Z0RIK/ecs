@@ -31,6 +31,8 @@ cmake --build .
 
 ## Example
 
+![Life of particles screenshot](https://github.com/Z0RIK/ecs/blob/main/example/particle_of_life_screenshot.png)
+
 The example project is a very basic implementation of a particle system.
 
 If you want to play around with the example, I recommend building the project with `--config=Release` to improve performance.
