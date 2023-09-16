@@ -8,7 +8,7 @@ public:
 	Pool(const Pool&) = delete;
 	Pool& operator=(const Pool&) = delete;
 
-	inline void* get(EntityIndex);
+	void* get(EntityIndex);
 
 protected:
 

@@ -43,10 +43,10 @@ protected:
 
 private:
 
-	inline Entity combineIndexVersion(EntityIndex index, EntityVersion version);
-	inline EntityIndex getEntityIndex(Entity entity);
-	inline EntityVersion getEntityVersion(Entity entity);
-	inline bool isEntityValid(Entity entity);
+	Entity combineIndexVersion(EntityIndex index, EntityVersion version);
+	EntityIndex getEntityIndex(Entity entity);
+	EntityVersion getEntityVersion(Entity entity);
+	bool isEntityValid(Entity entity);
 
 	template<typename T>
 	size_t getComponentId();

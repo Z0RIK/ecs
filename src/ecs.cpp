@@ -56,22 +56,22 @@ size_t Scene::size()
 	return mEntities.size() - mFreeIndexes.size();
 }
 
-inline Entity Scene::combineIndexVersion(EntityIndex index, EntityVersion version)
+Entity Scene::combineIndexVersion(EntityIndex index, EntityVersion version)
 {
 	return ((Entity)index << 32) | ((Entity)version);
 }
 
-inline EntityIndex Scene::getEntityIndex(Entity entity)
+EntityIndex Scene::getEntityIndex(Entity entity)
 {
 	return entity >> 32;
 }
 
-inline EntityVersion Scene::getEntityVersion(Entity entity)
+EntityVersion Scene::getEntityVersion(Entity entity)
 {
 	return (EntityVersion)entity;
 }
 
-inline bool Scene::isEntityValid(Entity entity)
+bool Scene::isEntityValid(Entity entity)
 {
 	return entity >> 32 != EntityIndex(-1);
 }
@@ -127,7 +127,7 @@ void Pool::remove(EntityIndex entityIndex)
 	mPointers[entityIndex] = nullptr;
 }
 
-inline void* Pool::get(EntityIndex entityIndex)
+void* Pool::get(EntityIndex entityIndex)
 {
 	return (mPointers.size() <= entityIndex) ? nullptr : mPointers[entityIndex];
 }
